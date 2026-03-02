@@ -1,0 +1,1 @@
+src += files('Client.cpp', 'packetHandler.cpp', 'NetworkHandler.cpp')

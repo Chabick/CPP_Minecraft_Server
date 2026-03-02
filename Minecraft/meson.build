@@ -1,0 +1,1 @@
+src += files('World.cpp', 'Player.cpp', 'Chunk.cpp')

@@ -1,0 +1,1 @@
+src += files('Registries.cpp', 'Tags.cpp')
