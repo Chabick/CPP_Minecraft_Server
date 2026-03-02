@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <map>
 
 #include "Minecraft.h"
 
@@ -16,8 +17,11 @@ namespace MC {
     };
 
     class World {
+    public:
         std::vector<MC::Player*> players; //players that are currently connected
         std::vector<MC::Player*> offline_players; //players that were online but disconnected
+        std::vector<MC::ChunkColumn> chunk_columns;
+        std::map<MC::ChunkColumnLocation, MC::ChunkColumn*> p_chunk_columns;
     };
 
     struct SWorldConfig {

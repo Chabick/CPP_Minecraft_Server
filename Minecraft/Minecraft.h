@@ -7,6 +7,7 @@ namespace MC {};
 #include "World.h"
 #include "Player.h"
 #include "Chunk.h"
+#include "Location.h"
 
 
 

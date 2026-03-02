@@ -6,11 +6,12 @@
 
 namespace MC {
     class Chunk {
+
     };
 
     class ChunkColumn {
         std::vector<MC::Chunk> chunks;
-        std::map<>
+        std::map<uint8_t, Chunk*> p_chunks;
     };
 }
 

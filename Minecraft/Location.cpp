@@ -26,3 +26,26 @@ MC::ChunkLocation MC::getChunkLocFromBlock(BlockLocation *block) {
     int z = (block->z)/16;
     return MC::ChunkLocation(x, y, z);
 }
+
+MC::BlockLocation::BlockLocation(uint8_t x, uint8_t y, uint8_t z, ChunkLocation loc)
+    : x(x), y(y), z(z), chunk(loc) {}
+
+MC::BlockLocation::BlockLocation(int x, int y, int z) {
+    int cx = x / 16;
+    int cy = y / 16;
+    int cz = z / 16;
+
+    int ix = x - cx * 16;
+    int iy = y - cy * 16;
+    int iz = z - cx * 16;
+
+    this->x = ix;
+    this->y = iy;
+    this->z = cz;
+
+    this->chunk = MC::ChunkLocation(x, y, z);
+}
+
+bool MC::BlockLocation::operator==(const BlockLocation &loc) const {
+    return x == loc.x && y == loc.y && z == loc.z && chunk == loc.chunk;
+}

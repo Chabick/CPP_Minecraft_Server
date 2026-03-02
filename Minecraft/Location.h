@@ -20,8 +20,13 @@ namespace MC {
     };
 
     struct BlockLocation {
+        BlockLocation(uint8_t x, uint8_t y, uint8_t z, ChunkLocation loc);
+        BlockLocation(int x, int y, int z);
+
         uint8_t x, y, z;
-        ChunkColumnLocation chunk;
+        ChunkLocation chunk;
+
+        bool operator==(const BlockLocation &loc) const;
     };
 
     ChunkColumnLocation getColumnLocFromBlock(BlockLocation* block);
