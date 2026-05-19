@@ -47,6 +47,13 @@ void Client::handle() {
 
             this->_closeIntern();
             break;
+        } catch (std::exception &e) {
+            printf("[E] A critical error occurred, that couldn't be handled!\n");
+            printf(e.what());
+            printf("\nResolving by shutting down!\n");
+
+            this->_closeIntern();
+            break;
         }
     }
     printf("[C] Connection broken\n");
@@ -57,4 +64,9 @@ void Client::_closeIntern() {
     shutdown(socket, SD_BOTH);
     internClosed = true;
     printf("[C] Connection Closed\n");
+    delete this->player;
+}
+
+void Client::createPlayer() {
+    this->player = new MC::Player();
 }

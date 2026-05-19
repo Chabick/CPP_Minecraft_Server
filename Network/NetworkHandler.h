@@ -3,9 +3,7 @@
 
 //for server
 #include <algorithm>
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <windows.h>
+#include "NetWork/NetSocket.h"
 
 #include <thread>
 #include <vector>

@@ -24,10 +24,13 @@ namespace MC {
         BlockLocation(int x, int y, int z);
 
         uint8_t x, y, z;
-        ChunkLocation chunk;
+        ChunkLocation chunk = ChunkLocation(0,0,0);
 
         bool operator==(const BlockLocation &loc) const;
     };
+
+    //TODO: implement
+    struct EntityLocation {};
 
     ChunkColumnLocation getColumnLocFromBlock(BlockLocation* block);
     ChunkLocation getChunkLocFromBlock(BlockLocation* block);

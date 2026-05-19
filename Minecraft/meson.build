@@ -1,1 +1,1 @@
-src += files('World.cpp', 'Player.cpp', 'Chunk.cpp', 'Location.cpp')
+src += files('World.cpp', 'Player.cpp', 'Chunk.cpp', 'Location.cpp', 'BlockTypes.cpp')

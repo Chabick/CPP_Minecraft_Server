@@ -1,6 +1,8 @@
 #ifndef MCSERVER_REGISTRIES_H
 #define MCSERVER_REGISTRIES_H
 
+#include <string>
+
 #define REG_DAMAGE_TYPE 0
 #define REG_DIMENSION_TYPE 1
 #define REG_BIOME_TYPE 2
@@ -29,5 +31,8 @@ extern const char *registry_wolf_variant[];
 extern const char *registry_zombie_nautilus_variant[];
 
 extern const char *registry_timeline[];
+
+
+int findRegId(size_t reg_length, void* registry, std::string id);
 
 #endif //MCSERVER_REGISTRIES_H

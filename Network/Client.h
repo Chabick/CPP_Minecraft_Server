@@ -31,7 +31,9 @@ struct Client {
 
     //player_settings as long as the player is not implemented
     char view_distance = 16;
-    MC::Player* player;
+    MC::Player* player = nullptr;
+
+    void createPlayer();
 private:
     bool internClosed = false;
 

@@ -1,1 +1,1 @@
-src += files('TVarInt.cpp', 'TString.cpp', 'TShort.cpp', 'TLong.cpp')
+src += files('TVarInt.cpp', 'TString.cpp', 'TShort.cpp', 'TLong.cpp', 'TPrefixedArray.cpp')

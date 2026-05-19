@@ -8,6 +8,7 @@ namespace MC {};
 #include "Player.h"
 #include "Chunk.h"
 #include "Location.h"
+#include "BlockTypes.h"
 
 
 

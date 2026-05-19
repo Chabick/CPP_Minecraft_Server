@@ -5,7 +5,7 @@
 
 int registry_lengths[] = {
     25,
-    1,
+    1, //dimension types
     1,
     1, //cat variant
     1, //chicken
@@ -16,7 +16,7 @@ int registry_lengths[] = {
     1, //wolf sounds
     1, //wolf variant
     1, //zombie nautilus
-    //1, //timeline
+    //3, //timeline
 };
 
 //#define REG_COUNT 12
@@ -95,32 +95,41 @@ const char *registry_cat_variant[] = {
     "minecraft:white"
 };
 const char *registry_chicken_variant[] = {
-    "temperate"
+    "minecraft:temperate"
 };
 const char *registry_cow_variant[] = {
-    "temperate"
+    "minecraft:temperate"
 };
 const char *registry_frog_variant[] = {
-    "temperate"
+    "minecraft:temperate"
 };
 const char *registry_painting_variant[] = {
-    "earth",
-    "wind",
-    "fire",
-    "water"
+    "minecraft:earth",
+    "minecraft:wind",
+    "minecraft:fire",
+    "minecraft:water"
 };
 const char *registry_pig_variant[] = {
-    "temperate"
+    "minecraft:temperate"
 };
 const char *registry_wolf_sound_variant[] = {
-    "classic"
+    "minecraft:classic"
 };
 const char *registry_wolf_variant[] = {
-    "black"
+    "minecraft:black"
 };
 const char *registry_zombie_nautilus_variant[] = {
-    "temperate"
+    "minecraft:temperate"
 };
 const char *registry_timeline[] = {
-    "in_overworld"
+    "minecraft:day",
+    "minecraft:early_game",
+    "minecraft:moon"
 };
+
+int findRegId(size_t reg_length, void *registry, std::string id) {
+    const char** reg = (const char **) registry;
+    for (int i = 0; i < reg_length; i++) {
+        if (std::string(reg[i]) == id) return i;
+    }
+}

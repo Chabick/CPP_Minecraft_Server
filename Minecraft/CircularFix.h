@@ -1,0 +1,8 @@
+#ifndef MCSERVER_CIRCULARFIX_H
+#define MCSERVER_CIRCULARFIX_H
+
+
+extern class CircularFix;
+
+
+#endif //MCSERVER_CIRCULARFIX_H

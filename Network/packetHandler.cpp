@@ -4,7 +4,9 @@
 #include "Data/Tags.h"
 #include "Types/TLong.h"
 #include "Types/TShort.h"
+#include "Types/TPrefixedArray.h"
 #include "Minecraft/Minecraft.h"
+
 
 PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int length) {
     if (client->status == Client::Status::PLAY) {
@@ -100,7 +102,7 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
             known_packs_entry_point:
             length = readVarIntRaw(client->socket);
             packetId = readVarIntRaw(client->socket);
-            if (packetId == 0x02) {
+            if (packetId == 0x02) { //handle "Serverbound Plugin Message"
                 if (handlePacket(client, packetId, length) == PacketHandler::CLOSE) return PacketHandler::CLOSE;
                 goto known_packs_entry_point;
             } else if (packetId == 0x00) {
@@ -141,7 +143,10 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
                 length += sizeStringRaw(std::string(registryID)) + ;
             }*/
 
-            //TODO: do more research
+
+            //completed: do more research
+            //maybe I understood it? idk
+            /*
             int length = 1 + 1 + sizeStringRaw("minecraft:timeline") + 1 + sizeStringRaw("minecraft:in_overworld") + sizeVarInt(1) + sizeVarInt(0);
             writeVarIntRaw(client->socket, length);
             writeByte(client->socket, 0x0D);
@@ -150,7 +155,20 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
             writeVarIntRaw(client->socket, 1);
             writeStringRaw(client->socket, "minecraft:in_overworld");
             writeVarIntRaw(client->socket, 1); //array length
-            writeVarIntRaw(client->socket, 0); //num Id for binding
+            writeVarIntRaw(client->socket, 0); //num Id for binding*/
+
+            //send update tags packet
+            writeVarIntRaw(client->socket, PACKET_UPDATE_TAGS_LENGTH);
+            writeByte(client->socket, 0x0D);
+            writeVarIntRaw(client->socket, GlobalTags.size());
+            for (auto tags : GlobalTags) {
+                writeStringRaw(client->socket, tags.registry_id);
+                writeVarIntRaw(client->socket, tags.tags.size());
+                for (auto tag : tags.tags) {
+                    writeStringRaw(client->socket, tag.identifier);
+                    writePrefixedArrayRaw(client->socket, tag.binding_ids); //automatically writes the length
+                }
+            }
 
 
             printf("[C] Finished Configuration...");
@@ -166,7 +184,40 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
             printf("Acknowledged\n");
             client->status = Client::Status::LOGIN;
 
+
+
+            //at this point the client has a player
+            client->createPlayer();
+
             //Send Login(Play) packet
+            //TODO: send packet size
+            writeVarIntRaw(client->socket, client->player->getEID());
+            writeByte(client->socket, MC::SWorldConfig::is_hardcore);
+
+            //send DimIds
+            writeVarIntRaw(client->socket, MC::SWorldConfig::dimension_ids->size());
+            for (int e = 0; e < MC::SWorldConfig::dimension_ids->size(); e++) {
+                writeStringRaw(client->socket, MC::SWorldConfig::dimension_ids[e]);
+            }
+
+            writeVarIntRaw(client->socket, 69420); //is ignored by client
+            writeVarIntRaw(client->socket, MC::SWorldConfig::view_distance);
+            writeVarIntRaw(client->socket, MC::SWorldConfig::simulation_distance);
+            writeByte(client->socket, MC::SWorldConfig::reduced_debug_info);
+            writeByte(client->socket, MC::SWorldConfig::enable_respawn_screen);
+            writeByte(client->socket, MC::SWorldConfig::do_limited_crafting);
+            writeVarIntRaw(client->socket, findRegId(registry_lengths[1/*dimtypes*/], &registry_dimensionTypes,
+                MC::SWorldConfig::spawndim_id)); //TODO: maybe error due to custom dimensions because name is used for dim type search
+            writeStringRaw(client->socket, MC::SWorldConfig::spawndim_id);
+            send_all(client->socket, &MC::SWorldConfig::hashed_seed, 8);
+            writeByte(client->socket, client->player->game_mode);
+            writeByte(client->socket, client->player->prev_game_mode);
+            writeByte(client->socket, MC::SWorldConfig::is_debug);
+            writeByte(client->socket, MC::SWorldConfig::is_flat);
+            writeByte(client->socket, client->player->has_died);
+            writeVarIntRaw(client->socket, client->player->portal_cooldown);
+            writeVarIntRaw(client->socket, MC::SWorldConfig::world->sea_level);
+            writeByte(client->socket, false); //no secure chat
 
         }
     } else if (client->status == Client::Status::CONFIGURATION) {

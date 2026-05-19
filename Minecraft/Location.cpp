@@ -41,9 +41,9 @@ MC::BlockLocation::BlockLocation(int x, int y, int z) {
 
     this->x = ix;
     this->y = iy;
-    this->z = cz;
+    this->z = iz;
 
-    this->chunk = MC::ChunkLocation(x, y, z);
+    this->chunk = MC::ChunkLocation(cx, cy, cz);
 }
 
 bool MC::BlockLocation::operator==(const BlockLocation &loc) const {

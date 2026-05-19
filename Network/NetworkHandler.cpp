@@ -2,6 +2,8 @@
 
 #include <cstdio>
 
+//TODO: add the linux socket init version
+
 NetworkHandler::NetworkHandler() {
     clients = std::vector<Client>();
     clientsAddQueue = std::queue<Client>();

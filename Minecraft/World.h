@@ -5,15 +5,18 @@
 #include <vector>
 #include <map>
 
-#include "Minecraft.h"
+#include "Chunk.h"
+#include "Location.h"
+#include "Data/Registries.h"
+//#include "Player.h"
+
 
 namespace MC {
+    class Player; //forward declaration
+    enum GameMode : int;
+
     enum Difficulty {
         PEACEFUL = 0, EASY = 1, NORMAL = 2, HARD = 3
-    };
-
-    enum GameMode {
-        SURVIVAL = 0, CREATIVE = 1, ADVENTURE = 2, SPECTATOR = 3, UNKNOWN = -1
     };
 
     class World {
@@ -22,24 +25,32 @@ namespace MC {
         std::vector<MC::Player*> offline_players; //players that were online but disconnected
         std::vector<MC::ChunkColumn> chunk_columns;
         std::map<MC::ChunkColumnLocation, MC::ChunkColumn*> p_chunk_columns;
+        int sea_level = 0; //not implemented
     };
 
     struct SWorldConfig {
-        Difficulty difficulty = Difficulty::EASY;
-        int view_distance = 16;
-        int simulation_distance = 16;
-        bool is_hardcore = false; //Not implemented
-        bool enable_respawn_screen = true; //otherwise not implemented
-        std::string dimension_ids[1] = {"minecraft:overworld"};
-        bool do_limited_crafting = false; //unused by the client
-        int spawndim_num_id = 0; //id (from the registers) from the dimension being spawned in
-        std::string spawndim_id = "minecraft:overworld";
-        int64_t hashed_seed = 0; //Not implemented
-        GameMode standard_game_mode = GameMode::SURVIVAL;
-        bool is_debug = false; //otherwise not implemented
-        bool is_flat = false; //just clientside cosmetic
-        World* world;
-    } WorldConfig;
+        static Difficulty difficulty;
+        static int view_distance;
+        static int simulation_distance;
+        static bool is_hardcore; //Not implemented, leave on false
+        static bool enable_respawn_screen; //otherwise not implemented, leave on true
+        static std::string dimension_ids[1];
+        static bool do_limited_crafting; //unused by the client
+        static int spawndim_num_id;//0;
+        static std::string spawndim_id;
+        static int64_t hashed_seed; //Not implemented
+        static GameMode standard_game_mode;
+        static bool reduced_debug_info;
+        static bool is_debug; //otherwise not implemented
+        static bool is_flat; //just clientside cosmetic
+        static World* world;
+    };
+
+    struct SDynamicConfig {
+        int playercount = 0;
+    };
+
+    extern SDynamicConfig DynamicConfig;
 }
 
 #endif //MCSERVER_WORLD_H
