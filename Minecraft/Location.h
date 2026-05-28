@@ -30,10 +30,29 @@ namespace MC {
     };
 
     //TODO: implement
-    struct EntityLocation {};
+    struct EntityLocation {
+        EntityLocation(double x, double y, double z);
+        EntityLocation(double x, double y, double z, double vx, double vy, double vz);
+        EntityLocation(double x, double y, double z, double vx, double vy, double vz, float pitch, float yaw);
+
+        double x, y, z;
+        double vx, vy, vz;
+        float pitch, yaw;
+
+        bool operator|(const EntityLocation &loc) const; //will be for comparing just position
+        bool operator|(const BlockLocation &loc) const; //check if pos is in block
+        bool operator||(const BlockLocation &loc) const; //check if entity is completely in block (e.g. for gravity, checking for air under player)
+        bool operator|(const ChunkLocation &loc) const; //check if pos is in chunk
+        bool operator|(const ChunkColumnLocation &loc) const; //check if pos is in chunk column
+        bool operator&(const EntityLocation &loc) const; //will be for comparing with pos&pitch/yaw
+        bool operator==(const EntityLocation &loc) const; //will be for comparing everything
+
+
+    };
 
     ChunkColumnLocation getColumnLocFromBlock(BlockLocation* block);
     ChunkLocation getChunkLocFromBlock(BlockLocation* block);
+    ChunkLocation getChunkLocFromCoords(int x, int y, int z);
 }
 
 

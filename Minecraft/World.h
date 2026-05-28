@@ -34,7 +34,7 @@ namespace MC {
         static int simulation_distance;
         static bool is_hardcore; //Not implemented, leave on false
         static bool enable_respawn_screen; //otherwise not implemented, leave on true
-        static std::string dimension_ids[1];
+        static std::vector<std::string> dimension_ids;
         static bool do_limited_crafting; //unused by the client
         static int spawndim_num_id;//0;
         static std::string spawndim_id;

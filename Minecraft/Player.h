@@ -16,6 +16,8 @@ namespace MC {
         bool has_died = false;
         EntityLocation *death_location = nullptr;
 
+        EntityLocation *location = nullptr;
+
         int portal_cooldown = 0;
 
         Player();

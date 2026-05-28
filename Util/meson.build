@@ -1,1 +1,1 @@
-src += files('ReadBuffer.cpp', 'WrittenBuffer.cpp', 'tools.cpp')
+src += files('ReadBuffer.cpp', 'WrittenBuffer.cpp', 'tools.cpp', 'Update.cpp')

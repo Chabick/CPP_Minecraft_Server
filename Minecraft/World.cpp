@@ -10,7 +10,7 @@ int MC::SWorldConfig::view_distance = 16;
 int MC::SWorldConfig::simulation_distance = 16;
 bool MC::SWorldConfig::is_hardcore = false;
 bool MC::SWorldConfig::enable_respawn_screen = true;
-std::string MC::SWorldConfig::dimension_ids[1] = {"minecraft:overworld"};
+std::vector<std::string> MC::SWorldConfig::dimension_ids = {"minecraft:overworld",};
 bool MC::SWorldConfig::do_limited_crafting = false;
 //id (from the registers) from the dimension being spawned in
 int MC::SWorldConfig::spawndim_num_id = findRegId(registry_lengths[1],

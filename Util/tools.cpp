@@ -41,6 +41,32 @@ ssize_t send_all(SOCKET socket, void* buffer, ssize_t len) {
     return sent;
 }
 
+ssize_t debug_send_all(SOCKET socket, void* buffer, ssize_t len) {
+    const char* p = (const char *)buffer;
+    ssize_t sent = 0;
+
+    while (sent < len) {
+        printf(std::to_string(sent).c_str());
+        ssize_t n = send(socket, p+sent, len-sent, 0);
+        if (n > 0) {
+            sent += n;
+            continue;
+        }
+        if (n == 0) {
+            return -1;
+        }
+
+        int err = WSAGetLastError();
+        if (err == WSAEWOULDBLOCK || err == WSAEINTR) {
+            //TODO: disconnect client
+            return -1;
+        }
+        return -1;
+    }
+
+    return sent;
+}
+
 ssize_t recv_all (int client_fd, void *buf, size_t n, uint8_t require_first) {
     char *p = (char *)buf;
     size_t total = 0;

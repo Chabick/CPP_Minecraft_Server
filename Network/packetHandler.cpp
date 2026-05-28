@@ -1,5 +1,6 @@
 #include "Network/packetHandler.h"
 
+#include "Packet.h"
 #include "Data/Registries.h"
 #include "Data/Tags.h"
 #include "Types/TLong.h"
@@ -189,35 +190,75 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
             //at this point the client has a player
             client->createPlayer();
 
-            //Send Login(Play) packet
-            //TODO: send packet size
-            writeVarIntRaw(client->socket, client->player->getEID());
-            writeByte(client->socket, MC::SWorldConfig::is_hardcore);
 
-            //send DimIds
-            writeVarIntRaw(client->socket, MC::SWorldConfig::dimension_ids->size());
-            for (int e = 0; e < MC::SWorldConfig::dimension_ids->size(); e++) {
-                writeStringRaw(client->socket, MC::SWorldConfig::dimension_ids[e]);
+            //Send Login(Play) packet
+            Packet plog;
+            plog.id(0x30);
+            plog.varInt(client->player->getEID());
+            plog.byte(MC::SWorldConfig::is_hardcore);
+            plog.varInt(MC::SWorldConfig::dimension_ids.size());
+            for (int e = 0; e < MC::SWorldConfig::dimension_ids.size(); e++) {
+                plog.string(MC::SWorldConfig::dimension_ids[e]);
+            }
+            plog.varInt(69420);
+            plog.varInt(MC::SWorldConfig::view_distance);
+            plog.varInt(MC::SWorldConfig::simulation_distance);
+            plog.byte(MC::SWorldConfig::reduced_debug_info);
+            plog.byte(MC::SWorldConfig::enable_respawn_screen);
+            plog.byte(MC::SWorldConfig::do_limited_crafting);
+            plog.varInt(MC::SWorldConfig::spawndim_num_id);
+            plog.string(MC::SWorldConfig::spawndim_id);
+            plog.add((long) MC::SWorldConfig::hashed_seed);
+            plog.byte(client->player->game_mode);
+            plog.byte(client->player->prev_game_mode);
+            plog.byte(MC::SWorldConfig::is_debug);
+            plog.byte(MC::SWorldConfig::is_flat);
+            plog.byte(client->player->has_died);
+            plog.varInt(client->player->portal_cooldown);
+            plog.varInt(MC::SWorldConfig::world->sea_level);
+            plog.byte(false); //no secure chat
+
+            plog.send(client->socket);
+
+            Packet diff_change;
+            diff_change.id(0x0A);
+            diff_change.byte(MC::SWorldConfig::difficulty);
+            diff_change.byte(false); //diff is not locked
+            diff_change.send(client->socket);
+
+            //possible, but for now skipped, packets: "Player Abilities", "Set Held Item",
+            //  "Update Recipes", "Entity Event", "Commands", "Update Recipe Book"
+
+            Packet ppos;
+            ppos.id(0x46);
+            ppos.varInt(42); //random tp id
+            ppos.add((double)client->player->location->x);
+            ppos.add((double)client->player->location->y);
+            ppos.add((double)client->player->location->z);
+            ppos.add((double)client->player->location->vx);
+            ppos.add((double)client->player->location->vy);
+            ppos.add((double)client->player->location->vz);
+            ppos.add((float)client->player->location->yaw);
+            ppos.add((float)client->player->location->pitch);
+            ppos.add((int)0);
+
+            ppos.send(client->socket);
+
+
+            length = readVarIntRaw(client->socket);
+            packetId = readVarIntRaw(client->socket);
+            if (packetId != 0x00) {
+                printf("[C] Teleport of Joining Player failed!\n");
+                return PacketHandler::HandlerResponse::CLOSE;
+            }
+            //check the tp id
+            if (readVarIntRaw(client->socket) != 42) {
+                printf("[C] Teleport of Joining Player wasn't accepted by client -> Canceling connection\n");
+                return PacketHandler::HandlerResponse::CLOSE;
             }
 
-            writeVarIntRaw(client->socket, 69420); //is ignored by client
-            writeVarIntRaw(client->socket, MC::SWorldConfig::view_distance);
-            writeVarIntRaw(client->socket, MC::SWorldConfig::simulation_distance);
-            writeByte(client->socket, MC::SWorldConfig::reduced_debug_info);
-            writeByte(client->socket, MC::SWorldConfig::enable_respawn_screen);
-            writeByte(client->socket, MC::SWorldConfig::do_limited_crafting);
-            writeVarIntRaw(client->socket, findRegId(registry_lengths[1/*dimtypes*/], &registry_dimensionTypes,
-                MC::SWorldConfig::spawndim_id)); //TODO: maybe error due to custom dimensions because name is used for dim type search
-            writeStringRaw(client->socket, MC::SWorldConfig::spawndim_id);
-            send_all(client->socket, &MC::SWorldConfig::hashed_seed, 8);
-            writeByte(client->socket, client->player->game_mode);
-            writeByte(client->socket, client->player->prev_game_mode);
-            writeByte(client->socket, MC::SWorldConfig::is_debug);
-            writeByte(client->socket, MC::SWorldConfig::is_flat);
-            writeByte(client->socket, client->player->has_died);
-            writeVarIntRaw(client->socket, client->player->portal_cooldown);
-            writeVarIntRaw(client->socket, MC::SWorldConfig::world->sea_level);
-            writeByte(client->socket, false); //no secure chat
+            //possible, but for now skipped, packets: "Set Player Position and Rotation", "Server Data"
+
 
         }
     } else if (client->status == Client::Status::CONFIGURATION) {

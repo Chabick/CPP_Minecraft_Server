@@ -3,7 +3,10 @@
 
 #include <winsock2.h>
 #include <thread>
+#include <atomic>
+#include <mutex>
 #include "Minecraft/Minecraft.h"
+#include "Util/Update.h"
 
 
 struct Client {
@@ -15,6 +18,14 @@ struct Client {
     Client(const Client& client);
     Client(SOCKET socket);
     ~Client();
+
+    std::atomic<bool> hasGlobalUpdates;
+    std::mutex globalUpdateMutex;
+    std::vector<GlobalUpdate*> globalUpdates;
+
+    std::atomic<bool> hasClientUpdates;
+    std::mutex clientUpdatesMutex;
+    std::vector<ClientUpdate*> clientUpdates;
 
     void operator=(const Client& client);
 

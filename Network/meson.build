@@ -1,1 +1,1 @@
-src += files('Client.cpp', 'packetHandler.cpp', 'NetworkHandler.cpp', 'NetSocket.cpp')
+src += files('Client.cpp', 'packetHandler.cpp', 'NetworkHandler.cpp', 'NetSocket.cpp', 'Packet.cpp')
