@@ -42,6 +42,8 @@ public:
 
     void engage();
     void handleSafety();
+    void handleUpdates();
+    void handleDistributions();
 };
 
 

@@ -5,6 +5,8 @@
 #include <thread>
 #include <atomic>
 #include <mutex>
+#include <queue>
+
 #include "Minecraft/Minecraft.h"
 #include "Util/Update.h"
 
@@ -21,11 +23,11 @@ struct Client {
 
     std::atomic<bool> hasGlobalUpdates;
     std::mutex globalUpdateMutex;
-    std::vector<GlobalUpdate*> globalUpdates;
+    std::queue<Update::TypedUpdate*> globalUpdates;
 
     std::atomic<bool> hasClientUpdates;
     std::mutex clientUpdatesMutex;
-    std::vector<ClientUpdate*> clientUpdates;
+    std::queue<Update::TypedUpdate*> clientUpdates;
 
     void operator=(const Client& client);
 

@@ -116,8 +116,29 @@ void NetworkHandler::handleSafety() {
         }
         clientsRemQueue.pop();
     }
-
-
 }
 
 NetworkHandler::~NetworkHandler() {}
+
+void NetworkHandler::handleDistributions() {}
+
+void NetworkHandler::handleUpdates() {
+    for (Client &client : clients) {
+        if (client.hasGlobalUpdates) {
+            client.globalUpdateMutex.lock();
+            while (!client.globalUpdates.empty()) {
+                auto update = client.globalUpdates.front();
+
+                switch (update->type) {
+                    case Update::ADDPLAYER:
+                        auto data = update->addPlayer;
+                        //TODO: implement distribution to other clients as client updates
+                        break;
+                }
+
+                client.globalUpdates.pop();
+            }
+        }
+    }
+}
+

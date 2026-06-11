@@ -25,6 +25,7 @@ int __cdecl main() {
 
     while (true) {
         handler.handleSafety();
+        handler.handleUpdates();
         if (handler.status != ENGAGED) break;
     }
 

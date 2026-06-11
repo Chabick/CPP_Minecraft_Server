@@ -7,6 +7,7 @@
 #include "Types/TShort.h"
 #include "Types/TPrefixedArray.h"
 #include "Minecraft/Minecraft.h"
+#include "Util/Update.h"
 
 
 PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int length) {
@@ -189,6 +190,7 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
 
             //at this point the client has a player
             client->createPlayer();
+            client->player->name = playerName;
 
 
             //Send Login(Play) packet
@@ -259,7 +261,18 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
 
             //possible, but for now skipped, packets: "Set Player Position and Rotation", "Server Data"
 
+            //create the Player Joining Update
+            //increase scope
+            if constexpr (true) {
+                //add the Player Joining to the GlobalUpdate Que
+                client->globalUpdateMutex.lock();
+                client->globalUpdates.emplace<Update::TypedUpdate>({Update::ADDPLAYER, {Update::Data::_GlobalAddPlayer{client->player->name.c_str()}}});
+                client->globalUpdateMutex.unlock();
+                client->hasGlobalUpdates = true;
+            }
 
+            //get all other players currently online
+            //TODO: How? I need a thread safe access without needing locks every time
         }
     } else if (client->status == Client::Status::CONFIGURATION) {
         switch (packetId) {
