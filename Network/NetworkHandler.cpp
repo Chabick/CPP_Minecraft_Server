@@ -132,7 +132,14 @@ void NetworkHandler::handleUpdates() {
                 switch (update->type) {
                     case Update::ADDPLAYER:
                         auto data = update->addPlayer;
-                        //TODO: implement distribution to other clients as client updates
+                        for (Client &cl : clients) {
+                            if (&client != &cl) {
+                                cl.clientUpdatesMutex.lock();
+                                cl.clientUpdates.push(update);
+                                cl.clientUpdatesMutex.unlock();
+                                cl.hasClientUpdates = true;
+                            }
+                        }
                         break;
                 }
 

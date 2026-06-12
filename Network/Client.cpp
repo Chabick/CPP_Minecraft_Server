@@ -67,6 +67,6 @@ void Client::_closeIntern() {
     delete this->player;
 }
 
-void Client::createPlayer() {
-    this->player = new MC::Player();
+void Client::createPlayer(uint8_t uuid[]) {
+    this->player = new MC::Player(uuid);
 }

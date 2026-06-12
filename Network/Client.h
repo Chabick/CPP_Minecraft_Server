@@ -46,7 +46,7 @@ struct Client {
     char view_distance = 16;
     MC::Player* player = nullptr;
 
-    void createPlayer();
+    void createPlayer(uint8_t uuid[]);
 private:
     bool internClosed = false;
 

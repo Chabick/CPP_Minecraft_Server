@@ -10,7 +10,12 @@ MC::Player::~Player() {
     System::PlayerManagement::unregisterPlayer(this);
 }
 
-MC::Player::Player() {
+MC::Player::Player(uint8_t uuid[]) {
+    //TODO: load player info from files using uuid
+    for (int i = 0; i < 16; i++) {
+        this->uuid[i] = uuid[i];
+    }
+
     this->EID = MC::DynamicConfig.playercount;
     MC::DynamicConfig.playercount++;
 

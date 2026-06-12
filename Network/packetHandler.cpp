@@ -192,7 +192,7 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
 
 
             //at this point the client has a player
-            client->createPlayer();
+            client->createPlayer(uuid);
             client->player->name = playerName;
 
 
@@ -269,15 +269,20 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
             if constexpr (true) {
                 //add the Player Joining to the GlobalUpdate Que
                 client->globalUpdateMutex.lock();
-                client->globalUpdates.emplace<Update::TypedUpdate>({Update::ADDPLAYER, {Update::Data::_GlobalAddPlayer{client->player->name.c_str()}}});
+                Update::Data::_GlobalAddPlayer data{client->player->name.c_str()};
+                auto* update = new Update::TypedUpdate();
+                update->type = Update::ADDPLAYER;
+                update->addPlayer = data;
+                client->globalUpdates.push(update);
                 client->globalUpdateMutex.unlock();
                 client->hasGlobalUpdates = true;
             }
 
             //get all other players currently online
-            std::unique_ptr<std::vector<std::shared_ptr<const MC::Player>>> onlinePlayers = System::PlayerManagement::getPlayers();
-            for (auto player : *onlinePlayers) {
+            std::shared_ptr<const std::vector<std::shared_ptr<const MC::Player>>> onlinePlayers = System::PlayerManagement::getPlayers();
+            for (auto player : *onlinePlayers) { //updates also for the player itself
                 //Add this player to the PacketData send to the client in UpdatePlayerInfo
+
             }
         }
     } else if (client->status == Client::Status::CONFIGURATION) {
@@ -293,10 +298,8 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
                 break;
 
         }
-    } else if (client->status == Client::Status::LOGIN) {
-        switch (packetId) {
-
-        }
+    } else if (client->status == Client::Status::LOGIN) { //currently unused because of different send orders
+        switch (packetId) {}
     }
 
     return PacketHandler::NONE;

@@ -16,6 +16,8 @@
 #include "Types/TShort.h"
 #include "Util/tools.h"
 
+#include "Systems/PlayerManagement.h"
+
 #define DEFAULT_BUFLEN 1024
 #define DEFAULT_PORT "25565"
 
@@ -24,7 +26,9 @@ int __cdecl main() {
     handler.engage();
 
     while (true) {
+        while (System::PlayerManagement::isUsed()) {} //wait for players to be free for deletion
         handler.handleSafety();
+
         handler.handleUpdates();
         if (handler.status != ENGAGED) break;
     }

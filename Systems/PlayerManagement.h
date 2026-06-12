@@ -7,12 +7,14 @@
 
 namespace System {
     class PlayerManagement {
-        static std::vector<std::shared_ptr<MC::Player>> players;
+        static std::vector<std::shared_ptr<MC::Player>>* players;
+        static std::shared_ptr<const std::vector<std::shared_ptr<const MC::Player>>> playersPtr;
 
     public:
+        static bool isUsed();
         static void registerPlayer(MC::Player* player);
         static void unregisterPlayer(MC::Player* player);
-        static std::unique_ptr<std::vector<std::shared_ptr<const MC::Player>>> getPlayers();
+        static std::shared_ptr<const std::vector<std::shared_ptr<const MC::Player>>> getPlayers();
     };
 } // System
 

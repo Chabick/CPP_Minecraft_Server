@@ -10,6 +10,7 @@ namespace MC {
 
     class Player {
         int EID;
+        uint8_t uuid[16];
     public:
         MC::GameMode game_mode;
         MC::GameMode prev_game_mode;
@@ -23,10 +24,11 @@ namespace MC {
 
         int portal_cooldown = 0;
 
-        Player();
+        Player(uint8_t uuid[]);
         ~Player();
 
         int getEID() {return EID;}
+        [[nodiscard]] const uint8_t* getUUId() const {return uuid;};
 
         bool operator==(const Player &p) const {return name==p.name && EID==p.EID;};
     };
