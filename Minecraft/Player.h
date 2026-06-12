@@ -27,6 +27,8 @@ namespace MC {
         ~Player();
 
         int getEID() {return EID;}
+
+        bool operator==(const Player &p) const {return name==p.name && EID==p.EID;};
     };
 }
 

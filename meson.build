@@ -14,6 +14,7 @@ subdir('Util')
 subdir('Network')
 subdir('Data')
 subdir('Minecraft')
+subdir('Systems')
 
 #has some error, i don't know how to implement this
 encryption_proj = subproject('cryptolib')

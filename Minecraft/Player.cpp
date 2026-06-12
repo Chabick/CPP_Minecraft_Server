@@ -1,10 +1,13 @@
 #include "Player.h"
 #include "World.h"
+#include "Systems/PlayerManagement.h"
 
 MC::Player::~Player() {
     MC::DynamicConfig.playercount--;
     delete this->death_location;
     delete this->location;
+
+    System::PlayerManagement::unregisterPlayer(this);
 }
 
 MC::Player::Player() {
@@ -15,4 +18,6 @@ MC::Player::Player() {
     this->prev_game_mode = MC::GameMode::UNKNOWN;
 
     this->location = new EntityLocation(0, 0, 0, 0, 0, 0, 0, 0);
+
+    System::PlayerManagement::registerPlayer(this);
 }

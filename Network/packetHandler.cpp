@@ -1,5 +1,7 @@
 #include "Network/packetHandler.h"
 
+#include <memory>
+
 #include "Packet.h"
 #include "Data/Registries.h"
 #include "Data/Tags.h"
@@ -7,6 +9,7 @@
 #include "Types/TShort.h"
 #include "Types/TPrefixedArray.h"
 #include "Minecraft/Minecraft.h"
+#include "Systems/PlayerManagement.h"
 #include "Util/Update.h"
 
 
@@ -272,7 +275,10 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
             }
 
             //get all other players currently online
-            //TODO: How? I need a thread safe access without needing locks every time
+            std::unique_ptr<std::vector<std::shared_ptr<const MC::Player>>> onlinePlayers = System::PlayerManagement::getPlayers();
+            for (auto player : *onlinePlayers) {
+                //Add this player to the PacketData send to the client in UpdatePlayerInfo
+            }
         }
     } else if (client->status == Client::Status::CONFIGURATION) {
         switch (packetId) {
