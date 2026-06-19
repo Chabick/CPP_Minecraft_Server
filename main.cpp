@@ -22,17 +22,28 @@
 #define DEFAULT_PORT "25565"
 
 int __cdecl main() {
-    NetworkHandler handler{};
-    handler.engage();
+    std::set_terminate([] {
+        fprintf(stderr, "TERMINATE\n");
+        fflush(stderr);
+        std::cout << "TERMINATE" << std::endl;
+        abort();
+    });
 
-    while (true) {
-        while (System::PlayerManagement::isUsed()) {} //wait for players to be free for deletion
-        handler.handleSafety();
+    try {
+        NetworkHandler handler{};
+        handler.engage();
 
-        handler.handleUpdates();
-        if (handler.status != ENGAGED) break;
+        while (true) {
+            while (System::PlayerManagement::isUsed()) {} //wait for players to be free for deletion
+            handler.handleSafety();
+
+            handler.handleUpdates();
+            if (handler.status != ENGAGED) break;
+        }
+    } catch (const std::exception &e) {
+        fprintf(stderr, "MAIN: %s\n", e.what());
     }
-
+    std::cout << "Exiting..." << std::endl;
     return 0;
 }
 

@@ -26,6 +26,8 @@ public:
     void string(std::string a);
     void byte(unsigned char a);
 
+    void prefixedArray(std::vector<int> a);
+
     void id(char a) {_id = a;}
 
     void send(SOCKET socket);

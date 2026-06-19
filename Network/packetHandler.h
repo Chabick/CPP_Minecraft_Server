@@ -10,9 +10,14 @@ namespace PacketHandler {
     enum HandlerResponse {
         NONE, CLOSE
     };
+
+    enum class PacketType {
+        ADDPLAYER/*PlayerInfoUpdate*/,
+    };
 }
 
 PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int length);
+PacketHandler::HandlerResponse sendPacket(Client *client, PacketHandler::PacketType type);
 
 
 #endif //MCSERVER_PACKETHANDLER_H

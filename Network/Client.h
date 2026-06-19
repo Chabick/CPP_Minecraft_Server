@@ -6,6 +6,7 @@
 #include <atomic>
 #include <mutex>
 #include <queue>
+#include <condition_variable>
 
 #include "Minecraft/Minecraft.h"
 #include "Util/Update.h"
@@ -39,18 +40,25 @@ struct Client {
         {return client.handler;};
 
     std::thread *handler;
+    std::thread *updateHandler;
+
+    std::mutex updateHandlerMutex;
+    std::condition_variable updateHandlerCondition;
+    std::atomic<bool> hasPacket;
+
 
     bool isInternClosed() const {return internClosed;}
 
     //player_settings as long as the player is not implemented
     char view_distance = 16;
-    MC::Player* player = nullptr;
+    std::shared_ptr<MC::Player> player;
 
     void createPlayer(uint8_t uuid[]);
 private:
     bool internClosed = false;
 
     void handle();
+    void handleUpdate();
     void _closeIntern();
 };
 

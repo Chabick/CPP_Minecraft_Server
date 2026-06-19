@@ -1,13 +1,12 @@
 #include "NetworkHandler.h"
 
 #include <cstdio>
+#include <iostream>
 
 //TODO: add the linux socket init version
 
 NetworkHandler::NetworkHandler() {
-    clients = std::vector<Client>();
-    clientsAddQueue = std::queue<Client>();
-    clientsRemQueue = std::queue<Client>();
+    clients = std::vector<std::shared_ptr<Client>>();
     ListenSocket = INVALID_SOCKET;
 
     //Init Winsock
@@ -90,31 +89,40 @@ void NetworkHandler::_engage() {
             printf("[E] Connection accept failed with error: %d\n", WSAGetLastError());
         }
 
-        Client client{cl};
-
-        clientsAddQueue.push(client);
+        while (hasClient) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+        clientsQueue.push(std::make_shared<Client>(cl));
+        hasClient = true;
+        free(addr);
+        free(addrlen);
     }
 }
 
 void NetworkHandler::handleSafety() {
-    while (clientsAddQueue.size() > 0) {
-        clients.push_back(clientsAddQueue.front());
-        clientsAddQueue.pop();
-    }
+    try {
+        if (hasClient) {
+            while (!clientsQueue.empty()) {
+                clients.push_back(clientsQueue.front());
+                clientsQueue.pop();
+            }
+            hasClient = false;
+        }
 
-    for (Client client : clients) {
-        if (client.isInternClosed()) clientsRemQueue.push(client);
-    }
-
-    while (clientsRemQueue.size() > 0) {
-        Client client = clientsRemQueue.front();
-        for (int i = 0; i < clients.size(); i++) {
-            if (clients.at(i).socket == client.socket) {
-                clients.erase(clients.cbegin() + i);
-                break;
+        if (!clients.empty()) {
+            auto it = clients.begin();
+            while (it != clients.end()) {
+                if (it->get()->isInternClosed()) {
+                    it = clients.erase(it);
+                }
+                else {
+                    ++it;
+                }
             }
         }
-        clientsRemQueue.pop();
+    } catch (std::exception &e) {
+        std::cout << "Exception in safety handling!" << std::endl;
+        std::cout << e.what();
     }
 }
 
@@ -123,27 +131,28 @@ NetworkHandler::~NetworkHandler() {}
 void NetworkHandler::handleDistributions() {}
 
 void NetworkHandler::handleUpdates() {
-    for (Client &client : clients) {
-        if (client.hasGlobalUpdates) {
-            client.globalUpdateMutex.lock();
-            while (!client.globalUpdates.empty()) {
-                auto update = client.globalUpdates.front();
+    for (std::shared_ptr<Client> client : clients) {
+        if (client->hasGlobalUpdates) {
+            std::scoped_lock<std::mutex> lock{client->globalUpdateMutex};
+            while (!client->globalUpdates.empty()) {
+                auto update = client->globalUpdates.front();
 
                 switch (update->type) {
                     case Update::ADDPLAYER:
                         auto data = update->addPlayer;
-                        for (Client &cl : clients) {
-                            if (&client != &cl) {
-                                cl.clientUpdatesMutex.lock();
-                                cl.clientUpdates.push(update);
-                                cl.clientUpdatesMutex.unlock();
-                                cl.hasClientUpdates = true;
+                        for (const std::shared_ptr<Client>& cl : clients) {
+                            if (&(*client) != &(*cl)) {
+                                cl->clientUpdatesMutex.lock();
+                                cl->clientUpdates.push(update);
+                                cl->clientUpdatesMutex.unlock();
+                                cl->hasClientUpdates = true;
+                                cl->updateHandlerCondition.notify_one();
                             }
                         }
                         break;
                 }
 
-                client.globalUpdates.pop();
+                client->globalUpdates.pop();
             }
         }
     }

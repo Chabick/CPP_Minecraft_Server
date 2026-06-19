@@ -1,7 +1,13 @@
 #include "Packet.h"
 
+#include <bitset>
+
 #include "Types/TVarInt.h"
 #include "Util/tools.h"
+
+#include <iostream>
+#include <sstream>
+#include <iomanip>
 
 void Packet::add(bool a) {
     buff.insert(buff.end(), a);
@@ -34,6 +40,7 @@ void Packet::add(float a) {
         float d;
         char v[sizeof(float)];
     };
+    d = a;
     for (int i = 3; i >= 0; i--) {
         buff.insert(buff.end(), v[i]);
     }
@@ -68,7 +75,7 @@ void Packet::string(const char *a) {
 }
 
 void Packet::string(std::string a) {
-    buff.insert(buff.end(), a.size());
+    this->varInt(a.size());
     for (char c : a) {
         buff.insert(buff.end(), c);
     }
@@ -78,33 +85,59 @@ void Packet::byte(unsigned char a) {
     buff.insert(buff.end(), a);
 }
 
+void Packet::prefixedArray(std::vector<int> a) {
+    this->varInt(a.size());
+    for (int i : a) {
+        this->varInt(i);
+    }
+}
+
+std::string vectorTostring(const std::vector<char>& vec)
+{
+    std::stringstream result;
+    for (const auto& v : vec)
+    {
+        result
+            << std::setfill('0') << std::setw(sizeof(v) * 2)
+            << std::hex << +v;
+    }
+    return result.str();
+}
+
 void Packet::send(SOCKET socket) {
     buff.insert(buff.begin(), _id);
 
-    auto send_buff = (char* )malloc(buff.size() + sizeVarInt(buff.size()));
+    auto base = (char* )malloc(buff.size() + sizeVarInt(buff.size()));
+    char* write_buff = base;
+    char* send_buff = base;
 
-    int size = buff.size();
+    auto size = static_cast<int32_t>(buff.size());
 
     while (true) {
         if ((size & ~SEGMENT_BITS) == 0) {
-            *send_buff = size;
-            send_buff++;
-            break;;
+            *write_buff = static_cast<char>(size);
+            write_buff++;
+            break;
         }
 
-        *send_buff = (size & SEGMENT_BITS) | CONTINUE_BIT;
-        send_buff++;
+        *write_buff = (size & SEGMENT_BITS) | CONTINUE_BIT;
+        write_buff++;
 
         size >>= 7;
     }
 
-    unsigned short offset = sizeVarInt(buff.size());
-
-    for (int i = 0; i < buff.size(); i++) {
-        send_buff[i+offset] = buff[i];
+    /*std::bitset<8> x(buff.size()-sizeVarInt(buff.size()));
+    std::cout << x << ":" << vectorTostring(buff) << std::endl;*/
+    for (char i : buff) {
+        *write_buff = i;
+        write_buff++;
     }
 
     send_all(socket, send_buff, buff.size()+sizeVarInt(buff.size()));
+    /*for (int i = 0; i < buff.size()+sizeVarInt(buff.size()); i++) {
+        writeByte(socket, *send_buff);
+        send_buff++;
+    }*/
 
-    free(send_buff);
+    free(base);
 }

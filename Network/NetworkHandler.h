@@ -8,6 +8,8 @@
 #include <thread>
 #include <vector>
 #include <queue>
+#include <memory>
+#include <mutex>
 
 #include "Client.h"
 
@@ -22,9 +24,10 @@ enum NetworkStatus {
 class NetworkHandler {
 
     std::thread networkThread;
-    std::vector<Client> clients;
-    std::queue<Client> clientsAddQueue;
-    std::queue<Client> clientsRemQueue;
+    std::mutex clientMutex;
+    std::atomic<bool> hasClient;
+    std::vector<std::shared_ptr<Client>> clients;
+    std::queue<std::shared_ptr<Client>> clientsQueue;
 
     SOCKET ListenSocket;
     WSADATA wsadata;

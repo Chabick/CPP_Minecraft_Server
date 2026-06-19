@@ -2,15 +2,21 @@
 #include "World.h"
 #include "Systems/PlayerManagement.h"
 
+#include <iostream>
+
+#include "Network/Client.h"
+
 MC::Player::~Player() {
     MC::DynamicConfig.playercount--;
     delete this->death_location;
     delete this->location;
 
-    System::PlayerManagement::unregisterPlayer(this);
+    //System::PlayerManagement::unregisterPlayer(parent->player); //needs to be called before deleting player
 }
 
-MC::Player::Player(uint8_t uuid[]) {
+MC::Player::Player(uint8_t uuid[], Client* parent) {
+    this->parent = parent;
+
     //TODO: load player info from files using uuid
     for (int i = 0; i < 16; i++) {
         this->uuid[i] = uuid[i];
@@ -23,6 +29,4 @@ MC::Player::Player(uint8_t uuid[]) {
     this->prev_game_mode = MC::GameMode::UNKNOWN;
 
     this->location = new EntityLocation(0, 0, 0, 0, 0, 0, 0, 0);
-
-    System::PlayerManagement::registerPlayer(this);
 }

@@ -1,5 +1,6 @@
 #include "Network/packetHandler.h"
 
+#include <iostream>
 #include <memory>
 
 #include "Packet.h"
@@ -163,7 +164,19 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
             writeVarIntRaw(client->socket, 0); //num Id for binding*/
 
             //send update tags packet
-            writeVarIntRaw(client->socket, PACKET_UPDATE_TAGS_LENGTH);
+            Packet pUpdateTags{};
+            pUpdateTags.id(0x0D);
+            pUpdateTags.varInt(GlobalTags.size());
+            for (auto tags : GlobalTags) {
+                pUpdateTags.string(tags.registry_id);
+                pUpdateTags.varInt(tags.tags.size());
+                for (auto tag : tags.tags) {
+                    pUpdateTags.string(tag.identifier);
+                    pUpdateTags.prefixedArray(tag.binding_ids);
+                }
+            }
+            pUpdateTags.send(client->socket);
+            /*writeVarIntRaw(client->socket, PACKET_UPDATE_TAGS_LENGTH);
             writeByte(client->socket, 0x0D);
             writeVarIntRaw(client->socket, GlobalTags.size());
             for (auto tags : GlobalTags) {
@@ -173,12 +186,13 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
                     writeStringRaw(client->socket, tag.identifier);
                     writePrefixedArrayRaw(client->socket, tag.binding_ids); //automatically writes the length
                 }
-            }
+            }*/
 
 
             printf("[C] Finished Configuration...");
-            writeVarIntRaw(client->socket, 1);
-            writeByte(client->socket, 0x03);
+            Packet pFinishedConfig{};
+            pFinishedConfig.id(0x03);
+            pFinishedConfig.send(client->socket);
 
             length = readVarIntRaw(client->socket);
             packetId = readVarIntRaw(client->socket);
@@ -199,13 +213,13 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
             //Send Login(Play) packet
             Packet plog;
             plog.id(0x30);
-            plog.varInt(client->player->getEID());
+            plog.add((int)client->player->getEID());
             plog.byte(MC::SWorldConfig::is_hardcore);
             plog.varInt(MC::SWorldConfig::dimension_ids.size());
             for (int e = 0; e < MC::SWorldConfig::dimension_ids.size(); e++) {
                 plog.string(MC::SWorldConfig::dimension_ids[e]);
             }
-            plog.varInt(69420);
+            plog.varInt(42690);
             plog.varInt(MC::SWorldConfig::view_distance);
             plog.varInt(MC::SWorldConfig::simulation_distance);
             plog.byte(MC::SWorldConfig::reduced_debug_info);
@@ -221,9 +235,10 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
             plog.byte(client->player->has_died);
             plog.varInt(client->player->portal_cooldown);
             plog.varInt(MC::SWorldConfig::world->sea_level);
-            plog.byte(false); //no secure chat
+            plog.byte(false); //no secure chat*/
 
             plog.send(client->socket);
+            std::cout << "[C] Client logged in" << std::endl;
 
             Packet diff_change;
             diff_change.id(0x0A);
@@ -252,6 +267,11 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
 
             length = readVarIntRaw(client->socket);
             packetId = readVarIntRaw(client->socket);
+            if (packetId == 0x15) {
+                consume(client->socket, length-1);
+            }
+            length = readVarIntRaw(client->socket);
+            packetId = readVarIntRaw(client->socket);
             if (packetId != 0x00) {
                 printf("[C] Teleport of Joining Player failed!\n");
                 return PacketHandler::HandlerResponse::CLOSE;
@@ -262,7 +282,13 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
                 return PacketHandler::HandlerResponse::CLOSE;
             }
 
-            //possible, but for now skipped, packets: "Set Player Position and Rotation", "Server Data"
+            length = readVarIntRaw(client->socket);
+            packetId = readVarIntRaw(client->socket);
+            if (packetId == 0x1e) { //consume "Set Player Position and Rotation"
+                consume(client->socket, length-1);
+            }
+
+            //possible, but for now skipped, packets: "Server Data"
 
             //create the Player Joining Update
             //increase scope
@@ -278,13 +304,45 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
                 client->hasGlobalUpdates = true;
             }
 
-            //get all other players currently online
-            std::shared_ptr<const std::vector<std::shared_ptr<const MC::Player>>> onlinePlayers = System::PlayerManagement::getPlayers();
-            for (auto player : *onlinePlayers) { //updates also for the player itself
+            //get all other players currently online and update their info
+            Packet playerInfoUpdate{};
+            playerInfoUpdate.id(0x44);
+            playerInfoUpdate.byte(0x01);
+            std::shared_ptr<const std::vector<std::shared_ptr<MC::Player>>> onlinePlayers = System::PlayerManagement::getPlayers();
+            playerInfoUpdate.varInt(onlinePlayers->size());
+            for (const auto& player : *onlinePlayers) { //updates also for the player itself
                 //Add this player to the PacketData send to the client in UpdatePlayerInfo
-
+                for (int i = 0; i < 16; i++) {
+                    playerInfoUpdate.byte(player->getUUId()[i]);
+                }
+                playerInfoUpdate.string(player->name);
+                playerInfoUpdate.varInt(0); //send no skin or cape data to the client
             }
+            playerInfoUpdate.send(client->socket);
         }
+
+        //skipped packets: "Initialize World Border"
+
+        Packet pUpdateTime{};
+        pUpdateTime.id(0x6f);
+        pUpdateTime.add((long) 0);
+        pUpdateTime.add((long) 0);
+        pUpdateTime.byte(false);
+        pUpdateTime.send(client->socket);
+
+        //skipped packets: "Set Default Spawn Position"
+
+        Packet pWaitForLevelChunks{};
+        pWaitForLevelChunks.id(0x26);
+        pWaitForLevelChunks.byte(13);
+        pWaitForLevelChunks.add((float) 0); //not important for this event
+
+        //skipped packets: "Set Ticking State", "Step Tick"
+
+        Packet pSetCenterChunk{};
+
+
+
     } else if (client->status == Client::Status::CONFIGURATION) {
         switch (packetId) {
             case 0x02: //Serverbound Plugin Message
@@ -303,4 +361,21 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
     }
 
     return PacketHandler::NONE;
+}
+
+PacketHandler::HandlerResponse sendPacket(Client *client, PacketHandler::PacketType packetType) {
+    switch (packetType) {
+        case PacketHandler::PacketType::ADDPLAYER:
+            Packet packet{};
+            packet.id(0x44);
+            packet.byte(0x01);
+            packet.varInt(1);
+            for (int i = 0; i < 8; i++) {
+                packet.byte(client->player->getUUId()[i]);
+            }
+            packet.string(client->player->name);
+            packet.varInt(0); //send no skin and cape data
+            packet.send(client->socket);
+            break;
+    }
 }

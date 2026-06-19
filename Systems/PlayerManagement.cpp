@@ -1,25 +1,22 @@
 #include "PlayerManagement.h"
 
 namespace System {
-    std::vector<std::shared_ptr<MC::Player>> *PlayerManagement::players =
-        new std::vector<std::shared_ptr<MC::Player>>();
-    std::shared_ptr<const std::vector<std::shared_ptr<const MC::Player>>> PlayerManagement::playersPtr =
-        std::make_shared<const std::vector<std::shared_ptr<const MC::Player>>>(
-            std::vector<std::shared_ptr<const MC::Player>>(PlayerManagement::players->begin(), PlayerManagement::players->end()));
+    std::shared_ptr<std::vector<std::shared_ptr<MC::Player>>> PlayerManagement::players =
+        std::make_shared<std::vector<std::shared_ptr<MC::Player>>>();
+    std::shared_ptr<const std::vector<std::shared_ptr<MC::Player>>> PlayerManagement::playersPtr = PlayerManagement::players;
 
-    std::shared_ptr<const std::vector<std::shared_ptr<const MC::Player>>> PlayerManagement::getPlayers() {
+    std::shared_ptr<const std::vector<std::shared_ptr<MC::Player>>> PlayerManagement::getPlayers() {
         //return std::make_unique<std::vector<std::shared_ptr<const MC::Player>>>(PlayerManagement::players.begin(), PlayerManagement::players.end());
         return PlayerManagement::playersPtr;
     }
 
-    void PlayerManagement::registerPlayer(MC::Player* player) {
-        PlayerManagement::players->push_back(std::make_shared<MC::Player>(*player));
+    void PlayerManagement::registerPlayer(std::shared_ptr<MC::Player> player) {
+        PlayerManagement::players->push_back(player);
     }
 
-    void PlayerManagement::unregisterPlayer(MC::Player* player) {
-        auto shptr = std::make_shared<MC::Player>(*player);
+    void PlayerManagement::unregisterPlayer(std::shared_ptr<MC::Player> player) {
         for (auto it = PlayerManagement::players->begin(); it != PlayerManagement::players->end(); ++it) {
-            if (*it == shptr) {
+            if (*it == player) {
                 PlayerManagement::players->erase(it);
                 return;
             }
