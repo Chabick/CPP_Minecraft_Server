@@ -18,8 +18,27 @@
 
 #include "Systems/PlayerManagement.h"
 
+#include "Util/Logger.h"
+
 #define DEFAULT_BUFLEN 1024
 #define DEFAULT_PORT "25565"
+
+#include <iomanip>
+#include "Network/Packet.h"
+/*int __cdecl main() {
+
+    Packet p;
+    p.add(static_cast<uint64_t>(0xff));
+    p.add(static_cast<uint64_t>(0xaa));
+    p.add(static_cast<uint64_t>(0xcc));
+    p.add(static_cast<uint64_t>(0x1122334455667788));
+
+    std::vector<char> v = *p._exposeBuffer();
+    std::cout << std::hex << std::showbase;
+    for (char c : v) {
+        std::cout << (int)c << std::endl;
+    }
+}*/
 
 int __cdecl main() {
     std::set_terminate([] {
@@ -35,6 +54,7 @@ int __cdecl main() {
 
         while (true) {
             while (System::PlayerManagement::isUsed()) {} //wait for players to be free for deletion
+
             handler.handleSafety();
 
             handler.handleUpdates();

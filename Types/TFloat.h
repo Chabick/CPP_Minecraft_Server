@@ -1,0 +1,7 @@
+#ifndef MCSERVER_TFLOAT_H
+#define MCSERVER_TFLOAT_H
+
+
+
+
+#endif //MCSERVER_TFLOAT_H

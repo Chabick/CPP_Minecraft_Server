@@ -11,13 +11,49 @@
 #include "Types/TPrefixedArray.h"
 #include "Minecraft/Minecraft.h"
 #include "Systems/PlayerManagement.h"
+#include "Types/TDouble.h"
+#include "Util/Logger.h"
 #include "Util/Update.h"
 
+//look them up on the wayback machine on 1.1.2026
+#define PACKET_ID_CHUNK_DATA_WITH_LIGHT 0x2C
+#define PACKET_ID_GAME_EVENT 0x26
+#define PACKET_ID_KEEP_ALIVE 0x2B
+
+namespace RCVPID {//recv packet id
+    inline constexpr char client_tick_end = 0x0c;
+    inline constexpr char keep_alive = 0x1b;
+    inline constexpr char player_move_position = 0x1d;
+    inline constexpr char player_move_position_and_rotation = 0x1e;
+}
 
 PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int length) {
     if (client->status == Client::Status::PLAY) {
         //The communication during play
-        //TODO: actually implement this
+        switch (packetId) {
+            case RCVPID::keep_alive:
+                consume(client->socket, length-1);
+                break;
+            case RCVPID::client_tick_end:
+                //TODO: actually implement
+                consume(client->socket, length-1); //placeholder
+                break;
+            case RCVPID::player_move_position:
+                //TODO: implement a cheat detection for movement
+                client->player->location->x = readDoubleRaw(client->socket);
+                client->player->location->y = readDoubleRaw(client->socket);
+                client->player->location->z = readDoubleRaw(client->socket);
+                consume(client->socket, 1); //consume the byte flag
+            case RCVPID::player_move_position_and_rotation:
+                client->player->location->x = readDoubleRaw(client->socket);
+                client->player->location->x = readDoubleRaw(client->socket);
+                client->player->location->x = readDoubleRaw(client->socket);
+                client->player->location->yaw = readFloatRaw(client->socket);
+                client->player->location->pitch = readFloatRaw(client->socket);
+                consume(client->socket, 1); //consume the byte flag
+            default:
+                consume(client->socket, length-1);
+        }
     } else if (client->status == Client::Status::NONE) {
         if (packetId != 0x00) return PacketHandler::CLOSE;
 
@@ -37,7 +73,7 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
 
         if (intent == 0x01) {
             char header[] = "{"
-                    "\"version\":{\"name\":\"1.21.8\",\"protocol\":774},"
+                    "\"version\":{\"name\":\"1.21.11\",\"protocol\":774},"
                     "\"description\":{\"text\":\"Hello World!\"},"
                     "\"players\": {\"max\":42690,\"online\": 0,\"sample\": []}";
             char footer[] = "}";
@@ -62,6 +98,7 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
             free(recvbuf_ping);
 
             return PacketHandler::CLOSE;
+
         } else if (intent == 0x02) {
             int packetLength = readVarIntRaw(client->socket);
             int packetId = readVarIntRaw(client->socket);
@@ -137,7 +174,7 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
                 for (int e = 0; e < registryLength; e++) {
                     const char *entry = registry[e];
                     writeStringRaw(client->socket, std::string(entry));
-                    writeByte(client->socket, false); //no NBT
+                    writeByte(client->socket, false); //no NBT //TODO: load nbt from data file
                 }
             }
 
@@ -227,7 +264,7 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
             plog.byte(MC::SWorldConfig::do_limited_crafting);
             plog.varInt(MC::SWorldConfig::spawndim_num_id);
             plog.string(MC::SWorldConfig::spawndim_id);
-            plog.add((long) MC::SWorldConfig::hashed_seed);
+            plog.add((uint64_t) MC::SWorldConfig::hashed_seed);
             plog.byte(client->player->game_mode);
             plog.byte(client->player->prev_game_mode);
             plog.byte(MC::SWorldConfig::is_debug);
@@ -291,7 +328,7 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
             //possible, but for now skipped, packets: "Server Data"
 
             //create the Player Joining Update
-            //increase scope
+            //increase scope for MutexLocks
             if constexpr (true) {
                 //add the Player Joining to the GlobalUpdate Que
                 client->globalUpdateMutex.lock();
@@ -308,10 +345,11 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
             Packet playerInfoUpdate{};
             playerInfoUpdate.id(0x44);
             playerInfoUpdate.byte(0x01);
-            std::shared_ptr<const std::vector<std::shared_ptr<MC::Player>>> onlinePlayers = System::PlayerManagement::getPlayers();
+            std::vector<Id> const * onlinePlayers = System::PlayerManagement::getPlayers();
             playerInfoUpdate.varInt(onlinePlayers->size());
-            for (const auto& player : *onlinePlayers) { //updates also for the player itself
-                //Add this player to the PacketData send to the client in UpdatePlayerInfo
+            for (const auto& playerId : *onlinePlayers) { //updates also for the player itself
+                //Add this player to the PacketData sent to the client in UpdatePlayerInfo
+                System::PlayerManagement::PlayerT player = System::PlayerManagement::getPlayer(playerId);
                 for (int i = 0; i < 16; i++) {
                     playerInfoUpdate.byte(player->getUUId()[i]);
                 }
@@ -325,22 +363,119 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
 
         Packet pUpdateTime{};
         pUpdateTime.id(0x6f);
-        pUpdateTime.add((long) 0);
-        pUpdateTime.add((long) 0);
+        pUpdateTime.add((uint64_t) 0);
+        pUpdateTime.add((uint64_t) 0);
         pUpdateTime.byte(false);
         pUpdateTime.send(client->socket);
+        lgdb("Sent Packet-UpdateTime");
 
         //skipped packets: "Set Default Spawn Position"
 
         Packet pWaitForLevelChunks{};
-        pWaitForLevelChunks.id(0x26);
+        pWaitForLevelChunks.id(PACKET_ID_GAME_EVENT);
         pWaitForLevelChunks.byte(13);
         pWaitForLevelChunks.add((float) 0); //not important for this event
+        pWaitForLevelChunks.send(client->socket);
+        lgdb("Sent Packet-WaitForLevelChunks");
 
         //skipped packets: "Set Ticking State", "Step Tick"
 
         Packet pSetCenterChunk{};
+        pSetCenterChunk.id(0x5C);
+        pSetCenterChunk.varInt(0); //TODO: load player spawn pos and get chunk column x&y instead of 0:0
+        pSetCenterChunk.varInt(0);
+        pSetCenterChunk.send(client->socket);
+        lgdb("Sent Packet-SetCenterChunks");
 
+        std::vector<std::pair<int, int>> coords{};
+        coords.reserve(9);
+        coords.emplace_back(0, 0);
+        coords.emplace_back(0, 1);
+        coords.emplace_back(1, 1);
+        coords.emplace_back(1, 0);
+        coords.emplace_back(1, -1);
+        coords.emplace_back(0, -1);
+        coords.emplace_back(-1, -1);
+        coords.emplace_back(-1, 0);
+        coords.emplace_back(-1, 1);
+
+        for (int i = 0; i < 9; i++) {
+            Packet pChunkData{};
+            pChunkData.id(PACKET_ID_CHUNK_DATA_WITH_LIGHT);
+            pChunkData.add(coords.at(i).first);//(int) 0); //Chunk x
+            pChunkData.add(coords.at(i).second);//(int) 0); //Chunk y
+            pChunkData.varInt(0); //no heightmap
+
+            //for VarInt Size (for size of data field)
+            Packet::Counter* c = pChunkData.add(Packet::Counter::VarInt);
+
+            //first ChunkSection
+            pChunkData.add(static_cast<short>(1));
+            c->up(2);
+            pChunkData.byte(4);
+            c->up();
+            pChunkData.varInt(2); //length of prefixed array
+            c->up(sizeVarInt(2));
+            pChunkData.varInt(0); //air
+            c->up(sizeVarInt(0));
+            pChunkData.varInt(1); //stone
+            c->up(sizeVarInt(1));
+
+            pChunkData.add(static_cast<uint64_t>(0x0000000000000001));//0x8000000000000000); //at x,y,z=0 a stone block
+            c->up(8);
+            for (int i = 0; i < 255; i++) {
+                pChunkData.add(static_cast<uint64_t>(0));
+                c->up(8);
+            }
+            //biomes in 4x4x4 sections
+            pChunkData.byte(0);
+            c->up();
+            pChunkData.varInt(0);
+            c->up();
+
+            //Empty ChunkSections
+            for (int i = 0; i < 23; i++) {
+                pChunkData.add(static_cast<short>(0));
+                c->up(2);
+
+                //empty blocks and biomes
+                pChunkData.byte(0);
+                c->up();
+                pChunkData.varInt(0);
+                c->up();
+
+                pChunkData.byte(0);
+                c->up();
+                pChunkData.varInt(0);
+                c->up();
+            };
+
+            //no block entities
+            pChunkData.varInt(0);
+
+            //no light
+            pChunkData.varInt(0);
+            pChunkData.varInt(0);
+            pChunkData.varInt(1);
+            pChunkData.add(static_cast<uint64_t>(0x03ffffff));
+            pChunkData.varInt(1);
+            pChunkData.add(static_cast<uint64_t>(0x03ffffff));
+            pChunkData.varInt(0);
+            pChunkData.varInt(0);
+
+            pChunkData.build(); //inserts all Counters with shifting
+            pChunkData.send(client->socket);
+            lgdb("Sent Packet-ChunkData");
+        }
+
+        Packet pKeepAlive{};
+        pKeepAlive.id(PACKET_ID_KEEP_ALIVE);
+        pKeepAlive.add((uint64_t) 0);
+        pKeepAlive.send(client->socket);
+        lgdb("Sent Packet-KeepAlive");
+
+        client->status = Client::Status::PLAY;
+        info("Client Connected");
 
 
     } else if (client->status == Client::Status::CONFIGURATION) {

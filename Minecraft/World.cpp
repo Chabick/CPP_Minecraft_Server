@@ -6,7 +6,7 @@ namespace MC {
 }
 
 MC::Difficulty MC::SWorldConfig::difficulty = MC::Difficulty::EASY;
-int MC::SWorldConfig::view_distance = 16;
+int MC::SWorldConfig::view_distance = 2;
 int MC::SWorldConfig::simulation_distance = 16;
 bool MC::SWorldConfig::is_hardcore = false;
 bool MC::SWorldConfig::enable_respawn_screen = true;
@@ -17,7 +17,7 @@ int MC::SWorldConfig::spawndim_num_id = findRegId(registry_lengths[1],
     &registry_dimensionTypes, "minecraft:overworld");
 std::string MC::SWorldConfig::spawndim_id = "minecraft:overworld";
 int64_t MC::SWorldConfig::hashed_seed = 0;
-MC::GameMode MC::SWorldConfig::standard_game_mode = MC::GameMode::SURVIVAL;
+MC::GameMode MC::SWorldConfig::standard_game_mode = MC::GameMode::CREATIVE;
 bool MC::SWorldConfig::reduced_debug_info = false;
 bool MC::SWorldConfig::is_debug = false;
 bool MC::SWorldConfig::is_flat = false;

@@ -2,8 +2,8 @@
 #define MCSERVER_NETSOCKET_H
 
 #ifdef _WIN32
-#include <windows.h>
 #include <winsock2.h>
+#include <windows.h>
 #include <ws2tcpip.h>
 #elif defined(__unix__)
 #include <sys/socket.h>

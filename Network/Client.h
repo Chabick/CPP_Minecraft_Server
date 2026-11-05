@@ -11,6 +11,7 @@
 #include "Minecraft/Minecraft.h"
 #include "Util/Update.h"
 
+#include "Systems/IDManagement.h"
 
 struct Client {
     enum Status {
@@ -51,7 +52,8 @@ struct Client {
 
     //player_settings as long as the player is not implemented
     char view_distance = 16;
-    std::shared_ptr<MC::Player> player;
+    MC::Player* player = nullptr;
+    Id playerId = -1;
 
     void createPlayer(uint8_t uuid[]);
 private:

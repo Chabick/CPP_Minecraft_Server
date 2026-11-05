@@ -3,6 +3,8 @@
 #include <cstdio>
 #include <iostream>
 
+#include "Util/Logger.h"
+
 //TODO: add the linux socket init version
 
 NetworkHandler::NetworkHandler() {
@@ -73,9 +75,8 @@ void NetworkHandler::engage() {
     status = ENGAGED;
 }
 
-
 void NetworkHandler::_engage() {
-    printf("[I] Trying to engage\n");
+    info("Trying to engage");
     while (true) {
         //Accept a new client connection
         sockaddr *addr = nullptr;
@@ -84,13 +85,14 @@ void NetworkHandler::_engage() {
         /*if (addr == nullptr || addrlen == nullptr) {
             printf("[W] Connection Address or AddressLen is NULL. Might result in error.");
         }*/
-        printf("[C] New Connection from %d\n", addr);
+        info("New Connection from <addr>");
         if (cl == INVALID_SOCKET) {
             printf("[E] Connection accept failed with error: %d\n", WSAGetLastError());
         }
 
-        while (hasClient) {
+        while (hasClient) { //TODO: optimize thread safety
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            lgdb("NetworkHandler -> Client is still in Use");
         }
         clientsQueue.push(std::make_shared<Client>(cl));
         hasClient = true;

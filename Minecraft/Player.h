@@ -6,14 +6,23 @@
 #include "Location.h"
 #include <string>
 
+#include "Systems/IDManagement.h"
+
 struct Client;
+
+namespace System {
+    class PlayerManagement;
+}
 
 namespace MC {
     enum GameMode: int {
         SURVIVAL = 0, CREATIVE = 1, ADVENTURE = 2, SPECTATOR = 3, UNKNOWN = -1
     };
 
-    class Player {
+    class Player {//TODO: implement a system for thread safe access
+        friend class System::PlayerManagement;
+
+        Id player_id;
         int EID;
         uint8_t uuid[16];
         Client *parent;
@@ -34,6 +43,7 @@ namespace MC {
         ~Player();
 
         int getEID() {return EID;}
+        Id getPlayerId() {return player_id;}
         [[nodiscard]] const uint8_t* getUUId() {return uuid;};
 
         bool operator==(const Player &p) const {return name==p.name && EID==p.EID;};

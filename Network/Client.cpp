@@ -6,6 +6,7 @@
 #include <chrono>
 
 #include "Systems/PlayerManagement.h"
+#include "Util/Logger.h"
 
 Client::Client()
     : socket(INVALID_SOCKET), status(Client::Status::CLIENT_ERR) {}
@@ -48,7 +49,7 @@ void Client::handleUpdate() {
             updateHandlerCondition.wait(lock, [this]() {return this->hasClientUpdates == true || this->isInternClosed();}); //needs the check bc atomic
             if (this->isInternClosed()) return;
             while (this->hasPacket) {std::this_thread::sleep_for(std::chrono::nanoseconds(5));}
-            SuspendThread(reinterpret_cast<HANDLE>(this->handler->native_handle()));
+            SuspendThread(reinterpret_cast<HANDLE>(this->handler->native_handle())); //TODO: change to something that also works on linux
 
             //handle update
             clientUpdatesMutex.lock();
@@ -116,10 +117,12 @@ void Client::_closeIntern() {
     internClosed = true;
     updateHandlerCondition.notify_one();
     printf("[C] Connection Closed\n");
-    System::PlayerManagement::unregisterPlayer(player);
+    if (this->player != nullptr) {
+        System::PlayerManagement::unregisterPlayer(playerId);
+    }
 }
 
 void Client::createPlayer(uint8_t uuid[]) {
-    this->player = std::make_shared<MC::Player>(uuid, this);
-    System::PlayerManagement::registerPlayer(this->player);
+    this->player = new MC::Player(uuid, this);
+    this->playerId = System::PlayerManagement::registerPlayer(this->player);
 }
