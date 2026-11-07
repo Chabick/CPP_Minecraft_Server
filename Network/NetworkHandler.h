@@ -37,6 +37,8 @@ class NetworkHandler {
 
     void _engage();
 
+    std::atomic<bool> sendKeepAlive = false;
+
 public:
     NetworkStatus status;
 
@@ -47,6 +49,7 @@ public:
     void handleSafety();
     void handleUpdates();
     void handleDistributions();
+    void distributeUpdate(Update::TypedUpdate update);
 };
 
 

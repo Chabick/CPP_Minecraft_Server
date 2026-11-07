@@ -12,7 +12,7 @@ namespace PacketHandler {
     };
 
     enum class PacketType {
-        ADDPLAYER/*PlayerInfoUpdate*/,
+        ADDPLAYER/*PlayerInfoUpdate*/, KEEPALIVE,
     };
 }
 

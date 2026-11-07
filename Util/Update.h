@@ -12,13 +12,14 @@ namespace Update {
     }
 
     enum Type {
-        ADDPLAYER,
+        ADDPLAYER, KEEPALIVE,
     };
 
     struct TypedUpdate {
         Update::Type type;
 
         union {
+            bool nothing;
             Data::_GlobalAddPlayer addPlayer;
         };
     };

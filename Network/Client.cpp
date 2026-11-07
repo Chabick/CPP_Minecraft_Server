@@ -48,7 +48,7 @@ void Client::handleUpdate() {
             std::unique_lock<std::mutex> lock(updateHandlerMutex);
             updateHandlerCondition.wait(lock, [this]() {return this->hasClientUpdates == true || this->isInternClosed();}); //needs the check bc atomic
             if (this->isInternClosed()) return;
-            while (this->hasPacket) {std::this_thread::sleep_for(std::chrono::nanoseconds(5));}
+            while (this->hasPacket) {std::this_thread::sleep_for(std::chrono::microseconds(5));}
             SuspendThread(reinterpret_cast<HANDLE>(this->handler->native_handle())); //TODO: change to something that also works on linux
 
             //handle update
@@ -57,7 +57,7 @@ void Client::handleUpdate() {
                 Update::TypedUpdate* update = this->clientUpdates.front();
                 this->clientUpdates.pop();
                 switch (update->type) {
-                    case Update::Type::ADDPLAYER:
+                    case Update::Type::ADDPLAYER: {
                         auto response = sendPacket(this, PacketHandler::PacketType::ADDPLAYER);
                         if (response == PacketHandler::CLOSE) {
                             this->internClosed = true;
@@ -65,6 +65,16 @@ void Client::handleUpdate() {
                             return;
                         }
                         break;
+                    }
+
+                    case Update::Type::KEEPALIVE: {
+                        auto response = sendPacket(this, PacketHandler::PacketType::KEEPALIVE);
+                        if (response == PacketHandler::CLOSE) {
+                            this->internClosed = true;
+                            this->handler->join();
+                        }
+                        break;
+                    }
                 }
                 delete update;
             }
@@ -101,7 +111,7 @@ void Client::handle() {
         } catch (std::exception &e) {
             printf("[E] A critical error occurred, that couldn't be handled!\n");
             printf(e.what());
-            printf("\nResolving by shutting down!\n");
+            printf("\nResolving by shutting down client connection!\n");
 
             this->_closeIntern();
             break;

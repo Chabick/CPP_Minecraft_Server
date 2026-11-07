@@ -12,13 +12,16 @@
 #include "Minecraft/Minecraft.h"
 #include "Systems/PlayerManagement.h"
 #include "Types/TDouble.h"
+#include "Types/TFloat.h"
 #include "Util/Logger.h"
 #include "Util/Update.h"
 
 //look them up on the wayback machine on 1.1.2026
-#define PACKET_ID_CHUNK_DATA_WITH_LIGHT 0x2C
-#define PACKET_ID_GAME_EVENT 0x26
-#define PACKET_ID_KEEP_ALIVE 0x2B
+namespace SNDPID {//send packet id
+    inline constexpr char chunk_data_with_light = 0x2c;
+    inline constexpr char game_event = 0x26;
+    inline constexpr char keep_alive = 0x2b;
+}
 
 namespace RCVPID {//recv packet id
     inline constexpr char client_tick_end = 0x0c;
@@ -31,28 +34,37 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
     if (client->status == Client::Status::PLAY) {
         //The communication during play
         switch (packetId) {
-            case RCVPID::keep_alive:
+            case RCVPID::keep_alive: {
                 consume(client->socket, length-1);
+                client->recv_last_keepalive = true;
                 break;
-            case RCVPID::client_tick_end:
+            }
+            case RCVPID::client_tick_end: {
                 //TODO: actually implement
                 consume(client->socket, length-1); //placeholder
                 break;
-            case RCVPID::player_move_position:
+            }
+            case RCVPID::player_move_position: {
                 //TODO: implement a cheat detection for movement
                 client->player->location->x = readDoubleRaw(client->socket);
                 client->player->location->y = readDoubleRaw(client->socket);
                 client->player->location->z = readDoubleRaw(client->socket);
                 consume(client->socket, 1); //consume the byte flag
-            case RCVPID::player_move_position_and_rotation:
+                break;
+            }
+            case RCVPID::player_move_position_and_rotation: {
                 client->player->location->x = readDoubleRaw(client->socket);
                 client->player->location->x = readDoubleRaw(client->socket);
                 client->player->location->x = readDoubleRaw(client->socket);
                 client->player->location->yaw = readFloatRaw(client->socket);
                 client->player->location->pitch = readFloatRaw(client->socket);
                 consume(client->socket, 1); //consume the byte flag
-            default:
+                break;
+            }
+            default: {
                 consume(client->socket, length-1);
+                break;
+            }
         }
     } else if (client->status == Client::Status::NONE) {
         if (packetId != 0x00) return PacketHandler::CLOSE;
@@ -372,7 +384,7 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
         //skipped packets: "Set Default Spawn Position"
 
         Packet pWaitForLevelChunks{};
-        pWaitForLevelChunks.id(PACKET_ID_GAME_EVENT);
+        pWaitForLevelChunks.id(SNDPID::game_event);
         pWaitForLevelChunks.byte(13);
         pWaitForLevelChunks.add((float) 0); //not important for this event
         pWaitForLevelChunks.send(client->socket);
@@ -401,7 +413,7 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
 
         for (int i = 0; i < 9; i++) {
             Packet pChunkData{};
-            pChunkData.id(PACKET_ID_CHUNK_DATA_WITH_LIGHT);
+            pChunkData.id(SNDPID::chunk_data_with_light);
             pChunkData.add(coords.at(i).first);//(int) 0); //Chunk x
             pChunkData.add(coords.at(i).second);//(int) 0); //Chunk y
             pChunkData.varInt(0); //no heightmap
@@ -469,7 +481,7 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
         }
 
         Packet pKeepAlive{};
-        pKeepAlive.id(PACKET_ID_KEEP_ALIVE);
+        pKeepAlive.id(SNDPID::keep_alive);
         pKeepAlive.add((uint64_t) 0);
         pKeepAlive.send(client->socket);
         lgdb("Sent Packet-KeepAlive");
@@ -500,7 +512,7 @@ PacketHandler::HandlerResponse handlePacket(Client *client, char packetId, int l
 
 PacketHandler::HandlerResponse sendPacket(Client *client, PacketHandler::PacketType packetType) {
     switch (packetType) {
-        case PacketHandler::PacketType::ADDPLAYER:
+        case PacketHandler::PacketType::ADDPLAYER: {
             Packet packet{};
             packet.id(0x44);
             packet.byte(0x01);
@@ -512,5 +524,21 @@ PacketHandler::HandlerResponse sendPacket(Client *client, PacketHandler::PacketT
             packet.varInt(0); //send no skin and cape data
             packet.send(client->socket);
             break;
+        }
+
+        case PacketHandler::PacketType::KEEPALIVE: {
+            if (!client->recv_last_keepalive) {
+                return PacketHandler::CLOSE;
+            }
+            client->recv_last_keepalive = false;
+
+            Packet packet{};
+            packet.id(SNDPID::keep_alive);
+            packet.add(static_cast<uint64_t>(42));
+            packet.send(client->socket);
+            break;
+        }
     }
+
+    return PacketHandler::HandlerResponse::NONE;
 }

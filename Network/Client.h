@@ -36,6 +36,7 @@ struct Client {
     SOCKET socket;
     Client::Status status;
     int pinged = 0;
+    bool recv_last_keepalive = true;
 
     std::thread* getHandlerCopy(Client client)
         {return client.handler;};

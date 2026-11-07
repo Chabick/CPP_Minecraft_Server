@@ -50,8 +50,10 @@ void _linelogger();
 
 #ifdef LOGGER_LEVEL_LINECONTROL
 #define l _linelogger()
+#define ll _logger("LL", "--+");l;_logger("LL", "--")
 #else
 #define l
+#define ll
 #endif
 
 
@@ -60,6 +62,7 @@ void _linelogger();
 #define info(x)
 #define lgdb(x)
 #define l
+#define ll
 #endif
 
 

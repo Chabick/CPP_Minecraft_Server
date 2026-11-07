@@ -140,7 +140,7 @@ void NetworkHandler::handleUpdates() {
                 auto update = client->globalUpdates.front();
 
                 switch (update->type) {
-                    case Update::ADDPLAYER:
+                    case Update::ADDPLAYER: {
                         auto data = update->addPlayer;
                         for (const std::shared_ptr<Client>& cl : clients) {
                             if (&(*client) != &(*cl)) {
@@ -152,11 +152,29 @@ void NetworkHandler::handleUpdates() {
                             }
                         }
                         break;
+                    }
+                    case Update::KEEPALIVE: {break;}
+                    default: {break;}
                 }
 
                 client->globalUpdates.pop();
             }
         }
+
+        if (sendKeepAlive) {
+            client->clientUpdatesMutex.lock();
+            client->clientUpdates.push(new Update::TypedUpdate{Update::KEEPALIVE, {false}});
+            client->clientUpdatesMutex.unlock();
+            client->hasClientUpdates = true;
+            client->updateHandlerCondition.notify_one();
+        }
     }
+
+    if (sendKeepAlive) sendKeepAlive = false;
 }
 
+void NetworkHandler::distributeUpdate(Update::TypedUpdate update) {
+    if (update.type == Update::KEEPALIVE) { //special case
+        sendKeepAlive = true;
+    }
+}

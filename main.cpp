@@ -17,6 +17,7 @@
 #include "Util/tools.h"
 
 #include "Systems/PlayerManagement.h"
+#include "Systems/TimeManagement.h"
 
 #include "Util/Logger.h"
 
@@ -48,21 +49,35 @@ int __cdecl main() {
         abort();
     });
 
+    System::TimeManagement* timeManager;
+    NetworkHandler* handler;
+
     try {
-        NetworkHandler handler{};
-        handler.engage();
+        handler = new NetworkHandler();
+        handler->engage();
+
+        timeManager = new System::TimeManagement(handler);
+        //handler->distributeUpdate({Update::KEEPALIVE,{false}});
+        timeManager->startClock();
 
         while (true) {
             while (System::PlayerManagement::isUsed()) {} //wait for players to be free for deletion
 
-            handler.handleSafety();
+            handler->handleSafety();
 
-            handler.handleUpdates();
-            if (handler.status != ENGAGED) break;
+            handler->handleUpdates();
+            if (handler->status != ENGAGED) break;
         }
     } catch (const std::exception &e) {
         fprintf(stderr, "MAIN: %s\n", e.what());
     }
+
+    try {
+        timeManager->stopClock();
+    } catch (const std::exception &e) {
+        fprintf(stderr, "There was an critical Error shutting down all systems! This could result in data loss: %s\n", e.what());
+    }
+
     std::cout << "Exiting..." << std::endl;
     return 0;
 }

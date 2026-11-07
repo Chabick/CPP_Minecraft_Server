@@ -1,1 +1,1 @@
-src += files('PlayerManagement.cpp', 'IDManagement.cpp')
+src += files('PlayerManagement.cpp', 'IDManagement.cpp', 'TimeManagement.cpp')
